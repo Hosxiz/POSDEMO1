@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>POS Terminal - ระบบรับออเดอร์หน้าร้าน</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <!-- Header -->
+  <header class="app-header">
+    <div class="brand-section">
+      <div class="brand-logo" id="brand-logo-letter">P</div>
+      <div style="display: flex; align-items: baseline;">
+        <h1 class="brand-title" id="display-store-name">POS Store</h1>
+        <span class="brand-sub" id="display-store-branch">Counter Terminal</span>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button id="btn-report" class="btn-header">
+        📊 สรุปยอดขาย
+      </button>
+      <button id="btn-manage-menu" class="btn-header">
+        📦 จัดการสินค้า & สต็อก
+      </button>
+      <button id="btn-store-settings" class="btn-header">
+        ⚙️ ตั้งค่าร้านค้า
+      </button>
+    </div>
+  </header>
+
+  <!-- App Main Container -->
+  <div class="app-container">
+    <!-- Left: Products Catalog -->
+    <section class="catalog-section">
+      <div class="filter-bar">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="search-input" class="search-input" placeholder="ค้นหาเมนู..." />
+        </div>
+
+        <div class="categories-pills" id="categories-container">
+          <!-- Dynamic Category Pills -->
+        </div>
+      </div>
+
+      <!-- Compact Minimalist Products Grid -->
+      <div class="products-grid" id="products-grid">
+        <!-- Dynamic Products List -->
+      </div>
+    </section>
+
+    <!-- Right: Clean Cart Sidebar -->
+    <aside class="cart-sidebar">
+      <div class="cart-header">
+        <div class="cart-title">
+          รายการสั่งซื้อ (<span id="cart-item-count">0</span>)
+        </div>
+        <button id="btn-clear-cart" class="cart-clear-btn">ล้างรายการ</button>
+      </div>
+
+      <div class="cart-items" id="cart-items">
+        <div class="empty-cart-state">
+          <p style="font-size: 0.9rem; font-weight: 500;">ยังไม่มีรายการสินค้า</p>
+          <small style="color: #94a3b8;">เลือกสินค้าจากเมนูทางซ้ายเพื่อสั่งซื้อ</small>
+        </div>
+      </div>
+
+      <div class="cart-summary">
+        <div class="summary-row">
+          <span>จำนวนสินค้า</span>
+          <span id="cart-total-qty">0 ชิ้น</span>
+        </div>
+        <div class="summary-row" style="align-items: baseline; margin-top: 4px;">
+          <span style="font-size: 0.95rem; font-weight: 600; color: #0f172a;">ยอดรวมสุทธิ</span>
+          <span class="summary-total" id="cart-total-price">฿0</span>
+        </div>
+
+        <div style="margin-top: 8px;">
+          <button id="btn-checkout" class="btn-checkout" style="width: 100%; font-size: 1rem; padding: 14px;" disabled>
+            🎫 ออกใบคิวทันที (F9)
+          </button>
+          <div style="text-align: center; font-size: 0.75rem; color: #94a3b8; margin-top: 6px;">
+            * กดปุ่มเดียว พิมพ์ใบคิวออกเครื่องพิมพ์ทันที
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- MODAL: Payment / Checkout -->
+  <div id="modal-payment" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">ชำระเงิน</div>
+        <button class="modal-close" data-close="modal-payment">&times;</button>
+      </div>
+
+      <div style="background: #f8fafc; padding: 14px; border-radius: 8px; border: 1px solid #e2e8f0; text-align: center;">
+        <div style="font-size: 0.8rem; color: #64748b; font-weight: 500;">ยอดที่ต้องชำระ</div>
+        <div id="modal-pay-amount" style="font-size: 2rem; font-weight: 800; color: #0f172a; letter-spacing: -0.5px;">฿0</div>
+      </div>
+
+      <div class="payment-tabs">
+        <button class="payment-tab-btn active" id="tab-cash" data-mode="cash">เงินสด (Cash)</button>
+        <button class="payment-tab-btn" id="tab-qr" data-mode="qr">PromptPay QR</button>
+      </div>
+
+      <!-- Cash Section -->
+      <div id="payment-cash-section">
+        <div class="form-group">
+          <label class="form-label">รับเงินมา (บาท):</label>
+          <input type="number" id="input-cash-received" class="form-input" placeholder="ใส่จำนวนเงิน..." />
+        </div>
+
+        <div class="cash-quick-buttons">
+          <button class="quick-cash-btn" data-val="exact">พอดี</button>
+          <button class="quick-cash-btn" data-val="100">100</button>
+          <button class="quick-cash-btn" data-val="500">500</button>
+          <button class="quick-cash-btn" data-val="1000">1,000</button>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-top: 14px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px 14px; border-radius: 8px;">
+          <span style="font-size: 0.9rem; font-weight: 500; color: #64748b;">เงินทอน:</span>
+          <span id="cash-change-display" style="font-size: 1.25rem; font-weight: 700; color: #059669;">฿0</span>
+        </div>
+      </div>
+
+      <!-- QR Section -->
+      <div id="payment-qr-section" style="display: none; text-align: center; padding: 10px 0;">
+        <div style="background: #fff; width: 160px; height: 160px; margin: 0 auto; display: flex; align-items: center; justify-content: center; border-radius: 8px; border: 1px solid #e2e8f0; padding: 6px;">
+          <img id="qr-code-img" src="https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=PROMPTPAY_MOCK_PAYMENT" alt="QR PromptPay" style="width: 140px; height: 140px;" />
+        </div>
+        <p style="margin-top: 10px; font-size: 0.82rem; color: #64748b;">สแกนเพื่อชำระเงินเข้าบัญชีร้านค้า</p>
+      </div>
+
+      <button id="btn-confirm-payment" class="btn-checkout" style="width: 100%; margin-top: 6px;">
+        ยืนยันการชำระเงิน & ออกคิว
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL: Order Success & Printing -->
+  <div id="modal-success" class="modal-overlay">
+    <div class="modal-card" style="text-align: center;">
+      <div class="modal-header">
+        <div class="modal-title" style="color: #059669;">สั่งซื้อสำเร็จ</div>
+        <button class="modal-close" data-close="modal-success">&times;</button>
+      </div>
+
+      <div style="padding: 10px 0;">
+        <p style="font-size: 0.85rem; color: #64748b;">หมายเลขคิว</p>
+        <div id="success-queue-number" class="queue-display-number">Q-001</div>
+        <p id="success-summary-text" style="font-size: 0.9rem; color: #475569;"></p>
+      </div>
+
+      <div class="queue-actions-row">
+        <button id="btn-print-queue-only" class="btn-header" style="justify-content: center; background: #0f172a; color: #fff; border-color: #0f172a;">
+          พิมพ์ใบคิว
+        </button>
+        <button id="btn-print-receipt-full" class="btn-header" style="justify-content: center; background: #f8fafc; border-color: #cbd5e1;">
+          พิมพ์ใบเสร็จ + คิว
+        </button>
+      </div>
+
+      <button class="btn-header" data-close="modal-success" style="width: 100%; justify-content: center; margin-top: 10px;">
+        รับออเดอร์ถัดไป
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL: Daily Sales Report -->
+  <div id="modal-report" class="modal-overlay">
+    <div class="modal-card modal-card-lg">
+      <div class="modal-header">
+        <div class="modal-title">📊 สรุปยอดขายประจำวัน</div>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button id="btn-print-sales-report" class="btn-action-sm" style="padding: 6px 12px; font-weight: 600; background: #0f172a; color: #fff; border-color: #0f172a;">
+            🖨️ พิมพ์สรุปยอดขาย (80mm)
+          </button>
+          <button id="btn-trigger-reset-sales" class="btn-action-sm danger" style="padding: 6px 12px; font-weight: 600;">
+            🗑️ ล้างยอดขายทั้งหมด
+          </button>
+          <button class="modal-close" data-close="modal-report">&times;</button>
+        </div>
+      </div>
+
+      <!-- KPI Summary Cards -->
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;">
+        <div style="background: #f8fafc; padding: 14px; border-radius: 8px; border: 1px solid #e2e8f0;">
+          <div style="font-size: 0.8rem; color: #64748b; font-weight: 500;">ยอดขายรวมวันนี้</div>
+          <div id="report-total-revenue" style="font-size: 1.4rem; font-weight: 800; color: #059669; margin-top: 4px;">฿0</div>
+        </div>
+        <div style="background: #f8fafc; padding: 14px; border-radius: 8px; border: 1px solid #e2e8f0;">
+          <div style="font-size: 0.8rem; color: #64748b; font-weight: 500;">จำนวนบิล/ออเดอร์</div>
+          <div id="report-total-orders" style="font-size: 1.4rem; font-weight: 800; color: #0f172a; margin-top: 4px;">0 บิล</div>
+        </div>
+        <div style="background: #f8fafc; padding: 14px; border-radius: 8px; border: 1px solid #e2e8f0;">
+          <div style="font-size: 0.8rem; color: #64748b; font-weight: 500;">ยอดเฉลี่ยต่อบิล</div>
+          <div id="report-avg-order" style="font-size: 1.4rem; font-weight: 800; color: #0284c7; margin-top: 4px;">฿0</div>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
+        <h4 style="font-size: 0.9rem; font-weight: 600; color: #334155;">ประวัติการสั่งซื้อวันนี้</h4>
+        <span style="font-size: 0.8rem; color: #94a3b8;">สามารถกดพิมพ์สลิปซ้ำได้</span>
+      </div>
+
+      <div class="report-table-wrapper">
+        <table class="report-table">
+          <thead>
+            <tr>
+              <th>เวลา</th>
+              <th>คิว</th>
+              <th>รายการ</th>
+              <th>ช่องทาง</th>
+              <th style="text-align: right;">ยอดรวม</th>
+              <th style="text-align: center;">พิมพ์ซ้ำ</th>
+            </tr>
+          </thead>
+          <tbody id="report-orders-body">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Confirm Reset Sales (Safety Guard) -->
+  <div id="modal-confirm-reset" class="modal-overlay">
+    <div class="modal-card" style="max-width: 440px;">
+      <div class="modal-header">
+        <div class="modal-title" style="color: #dc2626;">⚠️ ยืนยันการล้างยอดขายทั้งหมด</div>
+        <button class="modal-close" data-close="modal-confirm-reset">&times;</button>
+      </div>
+
+      <div style="font-size: 0.88rem; color: #475569; line-height: 1.5;">
+        <p>การดำเนินการนี้จะ <strong>ลบประวัติบิลออเดอร์ทั้งหมดอย่างถาวร</strong> และรีเซ็ตหมายเลขคิวกลับไปเริ่มต้นที่ <strong>Q-001</strong></p>
+        <p style="margin-top: 10px; color: #dc2626; font-weight: 600;">กรุณาพิมพ์คำว่า <span style="background: #fee2e2; padding: 2px 6px; border-radius: 4px; font-family: monospace;">RESET</span> เพื่อยืนยัน:</p>
+      </div>
+
+      <div class="form-group">
+        <input type="text" id="input-confirm-reset-text" class="form-input" placeholder="พิมพ์คำว่า RESET" autocomplete="off" />
+      </div>
+
+      <div style="display: flex; gap: 8px; margin-top: 6px;">
+        <button id="btn-execute-reset-sales" class="btn-checkout" style="background: #dc2626; flex: 1;" disabled>
+          ยืนยันการล้างยอดขาย
+        </button>
+        <button class="btn-header" data-close="modal-confirm-reset">
+          ยกเลิก
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Product & Inventory Management -->
+  <div id="modal-menu" class="modal-overlay">
+    <div class="modal-card modal-card-lg">
+      <div class="modal-header">
+        <div class="modal-title" id="mgmt-modal-title">📦 จัดการสินค้าและสต็อก</div>
+        <button class="modal-close" data-close="modal-menu">&times;</button>
+      </div>
+
+      <!-- Clean Form Grid with No Overflow -->
+      <form id="form-product" class="product-form-grid">
+        <input type="hidden" id="input-prod-id" value="" />
+        <div class="form-group">
+          <label class="form-label">ชื่อสินค้า</label>
+          <input type="text" id="input-prod-name" class="form-input" placeholder="ระบุชื่อเมนู..." required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">หมวดหมู่</label>
+          <input type="text" id="input-prod-category" class="form-input" placeholder="ใส่หมวดหมู่..." required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">ราคา (฿)</label>
+          <input type="number" step="0.5" id="input-prod-price" class="form-input" placeholder="0.00" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">สต็อก (เว้นว่าง = ไม่จำกัด)</label>
+          <input type="number" id="input-prod-stock" class="form-input" placeholder="ไม่ระบุสต็อก" min="0" />
+        </div>
+        <div style="display: flex; gap: 6px;">
+          <button type="submit" id="btn-save-product-form" class="btn-checkout" style="padding: 9px 16px; font-size: 0.85rem; height: 38px; white-space: nowrap;">
+            บันทึก
+          </button>
+          <button type="button" id="btn-cancel-edit" class="btn-header" style="display: none; height: 38px; padding: 9px 12px; white-space: nowrap;">
+            ยกเลิก
+          </button>
+        </div>
+      </form>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+        <h4 style="font-size: 0.9rem; font-weight: 600; color: #334155;">รายการสินค้าในร้าน</h4>
+        <span style="font-size: 0.8rem; color: #94a3b8;">สามารถแก้สต็อกในตารางได้โดยตรง</span>
+      </div>
+
+      <div class="mgmt-table-wrapper">
+        <table class="mgmt-table">
+          <thead>
+            <tr>
+              <th>สินค้า</th>
+              <th>หมวด</th>
+              <th style="text-align: right;">ราคา</th>
+              <th style="text-align: center;">สต็อกคงเหลือ</th>
+              <th style="text-align: center;">จัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="mgmt-products-body">
+            <!-- Dynamically populated -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- MODAL: Store Profile & Settings -->
+  <div id="modal-store-settings" class="modal-overlay">
+    <div class="modal-card" style="max-width: 480px;">
+      <div class="modal-header">
+        <div class="modal-title">⚙️ ตั้งค่าร้านค้า & สลิปพิมพ์</div>
+        <button class="modal-close" data-close="modal-store-settings">&times;</button>
+      </div>
+
+      <p style="font-size: 0.82rem; color: #64748b; line-height: 1.4;">
+        ข้อมูลที่ระบุที่นี่จะแสดงบนแถบหัวเว็บ และ <strong>พิมพ์ลงบนหัวกระดาษใบคิว / สรุปยอดขาย</strong> โดยอัตโนมัติ
+      </p>
+
+      <form id="form-store-settings" style="display: flex; flex-direction: column; gap: 12px;">
+        <div class="form-group">
+          <label class="form-label">ชื่อร้านค้า (Store Name):</label>
+          <input type="text" id="input-store-name" class="form-input" placeholder="เช่น กาแฟชาวดอย, ชานมไข่มุก ฯลฯ" required />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">สาขา / สโลแกน (Branch / Tagline):</label>
+          <input type="text" id="input-store-branch" class="form-input" placeholder="เช่น สาขา 1 (หน้ามหาวิทยาลัย)" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">ข้อความท้ายใบคิว (Receipt Footer):</label>
+          <input type="text" id="input-store-footer" class="form-input" placeholder="เช่น ขอบคุณที่ใช้บริการ / โทร 081-xxx-xxxx" />
+        </div>
+
+        <div style="display: flex; gap: 8px; margin-top: 6px;">
+          <button type="submit" class="btn-checkout" style="flex: 1;">
+            บันทึกข้อมูลร้าน
+          </button>
+          <button type="button" class="btn-header" data-close="modal-store-settings">
+            ยกเลิก
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL: Product Options / Modifiers -->
+  <div id="modal-product-options" class="modal-overlay">
+    <div class="modal-card" style="max-width: 440px;">
+      <div class="modal-header">
+        <div class="modal-title" id="options-modal-product-name">เลือก Option / รายละเอียด</div>
+        <button class="modal-close" data-close="modal-product-options">&times;</button>
+      </div>
+
+      <div style="margin-bottom: 12px; font-size: 0.9rem; color: #64748b;" id="options-modal-product-price">
+        ราคา: 0 ฿
+      </div>
+
+      <!-- Quick Option Presets (Pills) -->
+      <div style="margin-bottom: 12px;">
+        <label class="form-label">ตัวเลือกด่วน (คลิกเพื่อเลือก/ยกเลิก):</label>
+        <div id="options-preset-chips" style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px;">
+          <button type="button" class="category-pill opt-chip" data-text="หวานปกติ">หวานปกติ</button>
+          <button type="button" class="category-pill opt-chip" data-text="หวานน้อย">หวานน้อย</button>
+          <button type="button" class="category-pill opt-chip" data-text="ไม่หวาน">ไม่หวาน</button>
+          <button type="button" class="category-pill opt-chip" data-text="ไม่ผัก">ไม่ผัก</button>
+          <button type="button" class="category-pill opt-chip" data-text="ไม่เผ็ด">ไม่เผ็ด</button>
+          <button type="button" class="category-pill opt-chip" data-text="เผ็ดน้อย">เผ็ดน้อย</button>
+          <button type="button" class="category-pill opt-chip" data-text="เผ็ดมาก">เผ็ดมาก</button>
+          <button type="button" class="category-pill opt-chip" data-text="แยกน้ำ">แยกน้ำ</button>
+          <button type="button" class="category-pill opt-chip" data-text="พิเศษ">พิเศษ</button>
+        </div>
+      </div>
+
+      <!-- Custom Note Input -->
+      <div class="form-group" style="margin-bottom: 16px;">
+        <label class="form-label">ข้อความกำกับ / หมายเหตุเพิ่มเติม:</label>
+        <input type="text" id="input-custom-option" class="form-input" placeholder="เช่น หวาน 25%, เพิ่มน้ำแข็ง, ไม่ใส่กระเทียม" />
+      </div>
+
+      <div style="display: flex; gap: 8px;">
+        <button type="button" id="btn-confirm-add-option" class="btn-checkout" style="flex: 1;">
+          ใส่ตะกร้า
+        </button>
+        <button type="button" id="btn-skip-option" class="btn-header" style="padding: 10px 16px;">
+          ธรรมดา (ไม่ใส่ Option)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

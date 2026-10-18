@@ -145,6 +145,21 @@ function renderCart() {
   cartTotalQty.textContent = `${totalCount} ชิ้น`;
   cartTotalPrice.textContent = formatCurrency(totalPrice);
 
+  // Sync Mobile Floating Cart Bar
+  const mobileCartBar = document.getElementById('mobile-cart-bar');
+  const mobileCartCount = document.getElementById('mobile-cart-count');
+  const mobileCartTotal = document.getElementById('mobile-cart-total');
+  if (mobileCartCount) mobileCartCount.textContent = totalCount;
+  if (mobileCartTotal) mobileCartTotal.textContent = formatCurrency(totalPrice);
+  if (mobileCartBar) {
+    if (totalCount > 0) {
+      mobileCartBar.classList.add('visible');
+    } else {
+      mobileCartBar.classList.remove('visible');
+      closeMobileCart();
+    }
+  }
+
   if (cart.length === 0) {
     btnCheckout.disabled = true;
     cartItemsContainer.innerHTML = `
@@ -285,6 +300,7 @@ async function triggerDirectQueuePrint() {
 
   // Clear cart and update stock on UI
   cart = [];
+  closeMobileCart();
   renderCart();
   await refreshProducts();
 
@@ -599,9 +615,34 @@ function setupEventListeners() {
 
 
 
+  // Mobile Drawer Triggers
+  const btnOpenMobileCart = document.getElementById('btn-open-mobile-cart');
+  const btnCloseMobileCart = document.getElementById('btn-close-cart-drawer');
+  const cartBackdrop = document.getElementById('cart-backdrop');
+  const mobileCartBar = document.getElementById('mobile-cart-bar');
+
+  if (btnOpenMobileCart) btnOpenMobileCart.addEventListener('click', openMobileCart);
+  if (mobileCartBar) mobileCartBar.addEventListener('click', openMobileCart);
+  if (btnCloseMobileCart) btnCloseMobileCart.addEventListener('click', closeMobileCart);
+  if (cartBackdrop) cartBackdrop.addEventListener('click', closeMobileCart);
+
   document.querySelectorAll('[data-close]').forEach(btn => {
     btn.addEventListener('click', () => closeModal(btn.getAttribute('data-close')));
   });
+}
+
+function openMobileCart() {
+  const sidebar = document.querySelector('.cart-sidebar');
+  const backdrop = document.getElementById('cart-backdrop');
+  if (sidebar) sidebar.classList.add('open');
+  if (backdrop) backdrop.classList.add('active');
+}
+
+function closeMobileCart() {
+  const sidebar = document.querySelector('.cart-sidebar');
+  const backdrop = document.getElementById('cart-backdrop');
+  if (sidebar) sidebar.classList.remove('open');
+  if (backdrop) backdrop.classList.remove('active');
 }
 
 function openModal(id) {

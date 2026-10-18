@@ -61,7 +61,10 @@
         <div class="cart-title">
           รายการสั่งซื้อ (<span id="cart-item-count">0</span>)
         </div>
-        <button id="btn-clear-cart" class="cart-clear-btn">ล้างรายการ</button>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <button id="btn-clear-cart" class="cart-clear-btn">ล้าง</button>
+          <button id="btn-close-cart-drawer" class="btn-close-mobile-cart" aria-label="ปิดตะกร้า">&times;</button>
+        </div>
       </div>
 
       <div class="cart-items" id="cart-items">
@@ -91,6 +94,26 @@
         </div>
       </div>
     </aside>
+  </div>
+
+  <!-- Mobile Cart Drawer Backdrop -->
+  <div id="cart-backdrop" class="cart-backdrop"></div>
+
+  <!-- Mobile Floating Cart Bottom Bar -->
+  <div id="mobile-cart-bar" class="mobile-cart-bar">
+    <div class="mobile-cart-bar-info">
+      <div class="mobile-cart-bar-badge">
+        <span>🛒</span>
+        <span id="mobile-cart-count">0</span>
+      </div>
+      <div>
+        <div class="mobile-cart-bar-label">ยอดรวมในตะกร้า</div>
+        <div class="mobile-cart-bar-price" id="mobile-cart-total">฿0</div>
+      </div>
+    </div>
+    <button id="btn-open-mobile-cart" class="mobile-cart-bar-btn">
+      ดูรายการ / ออกบิล ➔
+    </button>
   </div>
 
   <!-- MODAL: Payment / Checkout -->

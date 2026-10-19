@@ -71,13 +71,4 @@ npm test
 npm run build
 ```
 
----
 
-## ☁️ การเชื่อมต่อระบบ Cloud (Supabase)
-
-คัดลอกไฟล์ `.env.example` เป็น `.env.local` หรือตั้งค่าใน Hosting Environment:
-```env
-VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_KEY=your-anon-key
-```
-นำโครงสร้างตารางจากไฟล์ `supabase-schema.sql` ไปรันใน SQL Editor บน Supabase Console เพื่อสร้างตาราง `products`, `orders`, `order_items` และ `store_settings`

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { calculateCartTotals, addItemToCart, updateCartQuantity } from './cart.js';
 import { calculateCashChange, formatQueueNumber, createOrderPayload } from './order.js';
 import { canAddToCart, deductStockFromProducts, validateProductInput } from './inventory.js';
+import { getOptionsForCategory } from './options.js';
 
 describe('Domain: Cart logic', () => {
   it('calculates totals accurately', () => {
@@ -123,4 +124,86 @@ describe('Domain: Inventory and Product validation', () => {
     expect(validWithoutStock.valid).toBe(true);
     expect(validWithoutStock.data.stock).toBe(null);
   });
+
+  describe('Category-based Dynamic Option Presets', () => {
+    it('returns beverage options for tea, coffee, and drinks', () => {
+      const teaOptions = getOptionsForCategory('เครื่องดื่ม');
+      expect(teaOptions).toContain('หวานปกติ');
+      expect(teaOptions).toContain('หวานน้อย (50%)');
+      expect(teaOptions).toContain('ไม่หวาน (0%)');
+      expect(teaOptions).toContain('แยกน้ำ');
+      expect(teaOptions).not.toContain('เผ็ดน้อย');
+      expect(teaOptions).not.toContain('เผ็ดมาก');
+
+      const coffeeOptions = getOptionsForCategory('กาแฟสด');
+      expect(coffeeOptions).toContain('หวานปกติ');
+      expect(coffeeOptions).not.toContain('ไม่ใส่ผัก');
+    });
+
+    it('returns food spice & cooking options for food categories', () => {
+      const foodOptions = getOptionsForCategory('อาหารจานเดียว');
+      expect(foodOptions).toContain('เผ็ดน้อย');
+      expect(foodOptions).toContain('เผ็ดมาก');
+      expect(foodOptions).toContain('ไม่ใส่ผัก');
+      expect(foodOptions).not.toContain('หวานน้อย (50%)');
+      expect(foodOptions).not.toContain('แยกน้ำ');
+    });
+
+    it('returns bakery heating options for bakery items', () => {
+      const bakeryOptions = getOptionsForCategory('เบเกอรี่');
+      expect(bakeryOptions).toContain('อุ่นร้อน');
+      expect(bakeryOptions).toContain('ทานที่ร้าน');
+      expect(bakeryOptions).not.toContain('เผ็ดน้อย');
+      expect(bakeryOptions).not.toContain('หวาน 25%');
+    });
+
+    it('returns default fallback options for unknown categories', () => {
+      const defaultOptions = getOptionsForCategory('ของที่ระลึก');
+      expect(defaultOptions).toContain('ทานที่ร้าน');
+      expect(defaultOptions).toContain('ห่อกลับบ้าน');
+      expect(defaultOptions).toContain('พิเศษ');
+      expect(defaultOptions).not.toContain('เผ็ดมาก');
+    });
+  });
+
+  describe('StorageService: Categories deduplication & persistence', () => {
+    it('aggregates default, product, and custom categories uniquely', () => {
+      const mockStorage = {
+        getCustomCategories() {
+          return ['ของทานเล่น', 'อาหารจานเดียว'];
+        },
+        getAllCategories(products) {
+          const productCategories = products.map(p => p.category).filter(Boolean);
+          const customCategories = this.getCustomCategories();
+          const defaults = ['เครื่องดื่ม', 'กาแฟ', 'เบเกอรี่'];
+          
+          const combined = [...defaults, ...productCategories, ...customCategories];
+          const unique = [];
+          combined.forEach(cat => {
+            const clean = (cat || '').trim();
+            if (clean && !unique.some(u => u.toLowerCase() === clean.toLowerCase())) {
+              unique.push(clean);
+            }
+          });
+          return unique;
+        }
+      };
+
+      const sampleProducts = [
+        { id: '1', name: 'ชาไทย', category: 'เครื่องดื่ม' },
+        { id: '2', name: 'สเต็กไก่', category: 'สเต็ก' }
+      ];
+
+      const all = mockStorage.getAllCategories(sampleProducts);
+      expect(all).toContain('เครื่องดื่ม');
+      expect(all).toContain('กาแฟ');
+      expect(all).toContain('เบเกอรี่');
+      expect(all).toContain('ของทานเล่น');
+      expect(all).toContain('อาหารจานเดียว');
+      expect(all).toContain('สเต็ก');
+      // No duplicate 'เครื่องดื่ม'
+      expect(all.filter(c => c === 'เครื่องดื่ม').length).toBe(1);
+    });
+  });
 });
+

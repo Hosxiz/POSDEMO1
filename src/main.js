@@ -4,6 +4,7 @@ import { formatCurrency, formatDateTime, printReceipt, printSalesReport } from '
 import { calculateCartTotals, addItemToCart, updateCartQuantity, getCartItemKey } from './cart.js';
 import { calculateCashChange, createOrderPayload } from './order.js';
 import { canAddToCart, validateProductInput } from './inventory.js';
+import { getOptionsForCategory } from './options.js';
 
 // State
 let products = [];
@@ -49,15 +50,51 @@ async function refreshProducts() {
   renderCategories();
   renderProducts();
   renderManagementTable();
+  populateCategorySelect();
 }
 
 function renderCategories() {
-  const cats = ['ทั้งหมด', ...new Set(products.map(p => p.category))];
+  const allCategories = storageService.getAllCategories(products);
+  const cats = ['ทั้งหมด', ...allCategories];
   categoriesContainer.innerHTML = cats.map(cat => `
     <button class="category-pill ${cat === selectedCategory ? 'active' : ''}" data-cat="${cat}">
       ${cat}
     </button>
   `).join('');
+}
+
+function populateCategorySelect(selectedVal = '') {
+  const selectEl = document.getElementById('select-prod-category');
+  const customInput = document.getElementById('input-prod-category-custom');
+  const hiddenInput = document.getElementById('input-prod-category');
+  if (!selectEl) return;
+
+  const categories = storageService.getAllCategories(products);
+  let optionsHtml = categories.map(c => `
+    <option value="${c}" ${c === selectedVal ? 'selected' : ''}>${c}</option>
+  `).join('');
+
+  optionsHtml += `
+    <option value="__custom__" ${selectedVal && !categories.includes(selectedVal) ? 'selected' : ''}>✨ + เพิ่มหมวดหมู่ใหม่...</option>
+  `;
+
+  selectEl.innerHTML = optionsHtml;
+
+  if (selectedVal && !categories.includes(selectedVal)) {
+    selectEl.value = '__custom__';
+    customInput.style.display = 'block';
+    customInput.value = selectedVal;
+    hiddenInput.value = selectedVal;
+  } else {
+    const current = selectedVal || selectEl.value;
+    if (current === '__custom__') {
+      customInput.style.display = 'block';
+      hiddenInput.value = customInput.value.trim();
+    } else {
+      customInput.style.display = 'none';
+      hiddenInput.value = current;
+    }
+  }
 }
 
 // Targeted DOM Rendering (High Performance)
@@ -228,6 +265,7 @@ function resetProductForm() {
   document.getElementById('input-prod-id').value = '';
   document.getElementById('btn-save-product-form').textContent = 'บันทึก';
   document.getElementById('btn-cancel-edit').style.display = 'none';
+  populateCategorySelect();
 }
 
 function openProductOptionsModal(product) {
@@ -235,12 +273,17 @@ function openProductOptionsModal(product) {
   selectedOptionPresets.clear();
 
   document.getElementById('options-modal-product-name').textContent = `${product.name} (เลือก Option)`;
-  document.getElementById('options-modal-product-price').textContent = `ราคา: ${formatCurrency(product.price)}`;
+  const catLabel = product.category ? ` • หมวด: ${product.category}` : '';
+  document.getElementById('options-modal-product-price').textContent = `ราคา: ${formatCurrency(product.price)}${catLabel}`;
   document.getElementById('input-custom-option').value = '';
 
-  document.querySelectorAll('#options-preset-chips .opt-chip').forEach(chip => {
-    chip.classList.remove('selected');
-  });
+  const chipsContainer = document.getElementById('options-preset-chips');
+  if (chipsContainer) {
+    const options = getOptionsForCategory(product.category);
+    chipsContainer.innerHTML = options.map(opt => `
+      <button type="button" class="category-pill opt-chip" data-text="${opt}">${opt}</button>
+    `).join('');
+  }
 
   openModal('modal-product-options');
   setTimeout(() => {
@@ -533,9 +576,9 @@ function setupEventListeners() {
       if (prod) {
         document.getElementById('input-prod-id').value = prod.id;
         document.getElementById('input-prod-name').value = prod.name;
-        document.getElementById('input-prod-category').value = prod.category;
         document.getElementById('input-prod-price').value = prod.price;
         document.getElementById('input-prod-stock').value = prod.stock ?? 0;
+        populateCategorySelect(prod.category);
         document.getElementById('btn-save-product-form').textContent = 'อัปเดต';
         document.getElementById('btn-cancel-edit').style.display = 'inline-block';
         document.getElementById('input-prod-name').focus();
@@ -588,30 +631,88 @@ function setupEventListeners() {
     alert('ล้างประวัติยอดขายทั้งหมดและรีเซ็ตเลขคิวเริ่มต้นที่ Q-001 สำเร็จแล้ว');
   });
 
-  // Product Form Submit
-  document.getElementById('form-product').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const id = document.getElementById('input-prod-id').value;
-    const name = document.getElementById('input-prod-name').value;
-    const category = document.getElementById('input-prod-category').value;
-    const price = document.getElementById('input-prod-price').value;
-    const stock = document.getElementById('input-prod-stock').value;
+    // Category Select in Product Management
+    const selectProdCategory = document.getElementById('select-prod-category');
+    const inputCustomCat = document.getElementById('input-prod-category-custom');
+    const inputProdCat = document.getElementById('input-prod-category');
 
-    const validation = validateProductInput({ name, category, price, stock });
-    if (!validation.valid) {
-      alert(validation.error);
-      return;
+    if (selectProdCategory) {
+      selectProdCategory.addEventListener('change', (e) => {
+        if (e.target.value === '__custom__') {
+          inputCustomCat.style.display = 'block';
+          inputCustomCat.focus();
+          inputProdCat.value = inputCustomCat.value.trim();
+        } else {
+          inputCustomCat.style.display = 'none';
+          inputProdCat.value = e.target.value;
+        }
+      });
     }
 
-    const payload = {
-      ...(id ? { id } : {}),
-      ...validation.data
-    };
+    if (inputCustomCat) {
+      inputCustomCat.addEventListener('input', (e) => {
+        inputProdCat.value = e.target.value.trim();
+      });
+    }
 
-    await storageService.saveProduct(payload);
-    resetProductForm();
-    await refreshProducts();
-  });
+    // Quick Add Category Modal Trigger & Submit
+    const btnQuickAddCat = document.getElementById('btn-quick-add-category');
+    if (btnQuickAddCat) {
+      btnQuickAddCat.addEventListener('click', () => {
+        document.getElementById('input-quick-cat-name').value = '';
+        openModal('modal-add-category');
+        setTimeout(() => {
+          document.getElementById('input-quick-cat-name').focus();
+        }, 100);
+      });
+    }
+
+    const formQuickAddCat = document.getElementById('form-quick-add-category');
+    if (formQuickAddCat) {
+      formQuickAddCat.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const catName = document.getElementById('input-quick-cat-name').value.trim();
+        if (!catName) return;
+
+        storageService.saveCustomCategory(catName);
+        selectedCategory = catName;
+        await refreshProducts();
+        closeModal('modal-add-category');
+      });
+    }
+
+    // Product Form Submit
+    document.getElementById('form-product').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('input-prod-id').value;
+      const name = document.getElementById('input-prod-name').value;
+      const category = document.getElementById('input-prod-category').value.trim();
+      const price = document.getElementById('input-prod-price').value;
+      const stock = document.getElementById('input-prod-stock').value;
+
+      if (!category) {
+        alert('กรุณาระบุหมวดหมู่สินค้า');
+        return;
+      }
+
+      // If it's a new category, save it to custom categories as well
+      storageService.saveCustomCategory(category);
+
+      const validation = validateProductInput({ name, category, price, stock });
+      if (!validation.valid) {
+        alert(validation.error);
+        return;
+      }
+
+      const payload = {
+        ...(id ? { id } : {}),
+        ...validation.data
+      };
+
+      await storageService.saveProduct(payload);
+      resetProductForm();
+      await refreshProducts();
+    });
 
 
 

@@ -211,6 +211,32 @@ body {
   border-color: var(--primary);
 }
 
+.btn-add-cat-pill {
+  padding: 6px 12px;
+  background: #f0f9ff;
+  border: 1px dashed #0284c7;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #0284c7;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-add-cat-pill:hover {
+  background: #e0f2fe;
+  border-color: #0369a1;
+  color: #0369a1;
+}
+
+.btn-add-cat-pill:active {
+  transform: scale(0.97);
+}
+
 /* Products Grid */
 .products-grid {
   display: grid;

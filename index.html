@@ -44,8 +44,13 @@
           <input type="text" id="search-input" class="search-input" placeholder="ค้นหาเมนู..." />
         </div>
 
-        <div class="categories-pills" id="categories-container">
-          <!-- Dynamic Category Pills -->
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div class="categories-pills" id="categories-container" style="flex: 1;">
+            <!-- Dynamic Category Pills -->
+          </div>
+          <button type="button" id="btn-quick-add-category" class="btn-add-cat-pill" title="เพิ่มหมวดหมู่ใหม่">
+            + หมวดหมู่
+          </button>
         </div>
       </div>
 
@@ -299,7 +304,13 @@
         </div>
         <div class="form-group">
           <label class="form-label">หมวดหมู่</label>
-          <input type="text" id="input-prod-category" class="form-input" placeholder="ใส่หมวดหมู่..." required />
+          <div style="display: flex; gap: 4px;">
+            <select id="select-prod-category" class="form-input" style="flex: 1;" required>
+              <!-- Populated dynamically with categories -->
+            </select>
+          </div>
+          <input type="text" id="input-prod-category-custom" class="form-input" style="display: none; margin-top: 4px;" placeholder="พิมพ์ชื่อหมวดหมู่ใหม่..." />
+          <input type="hidden" id="input-prod-category" value="" required />
         </div>
         <div class="form-group">
           <label class="form-label">ราคา (฿)</label>
@@ -401,15 +412,7 @@
       <div style="margin-bottom: 12px;">
         <label class="form-label">ตัวเลือกด่วน (คลิกเพื่อเลือก/ยกเลิก):</label>
         <div id="options-preset-chips" style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px;">
-          <button type="button" class="category-pill opt-chip" data-text="หวานปกติ">หวานปกติ</button>
-          <button type="button" class="category-pill opt-chip" data-text="หวานน้อย">หวานน้อย</button>
-          <button type="button" class="category-pill opt-chip" data-text="ไม่หวาน">ไม่หวาน</button>
-          <button type="button" class="category-pill opt-chip" data-text="ไม่ผัก">ไม่ผัก</button>
-          <button type="button" class="category-pill opt-chip" data-text="ไม่เผ็ด">ไม่เผ็ด</button>
-          <button type="button" class="category-pill opt-chip" data-text="เผ็ดน้อย">เผ็ดน้อย</button>
-          <button type="button" class="category-pill opt-chip" data-text="เผ็ดมาก">เผ็ดมาก</button>
-          <button type="button" class="category-pill opt-chip" data-text="แยกน้ำ">แยกน้ำ</button>
-          <button type="button" class="category-pill opt-chip" data-text="พิเศษ">พิเศษ</button>
+          <!-- Dynamically populated based on product category -->
         </div>
       </div>
 
@@ -427,6 +430,30 @@
           ธรรมดา (ไม่ใส่ Option)
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Quick Add Category -->
+  <div id="modal-add-category" class="modal-overlay">
+    <div class="modal-card" style="max-width: 380px;">
+      <div class="modal-header">
+        <div class="modal-title">✨ เพิ่มหมวดหมู่ใหม่</div>
+        <button class="modal-close" data-close="modal-add-category">&times;</button>
+      </div>
+      <form id="form-quick-add-category">
+        <div class="form-group" style="margin-bottom: 16px;">
+          <label class="form-label">ชื่อหมวดหมู่</label>
+          <input type="text" id="input-quick-cat-name" class="form-input" placeholder="เช่น อาหารจานเดียว, ของทานเล่น, สเต็ก" required autofocus />
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button type="submit" class="btn-checkout" style="flex: 1;">
+            บันทึกหมวดหมู่
+          </button>
+          <button type="button" class="btn-header" data-close="modal-add-category" style="padding: 10px 16px;">
+            ยกเลิก
+          </button>
+        </div>
+      </form>
     </div>
   </div>
 

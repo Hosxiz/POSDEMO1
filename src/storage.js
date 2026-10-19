@@ -89,6 +89,46 @@ class StorageService {
     return updated;
   }
 
+  // --- CATEGORIES MANAGEMENT ---
+  getCustomCategories() {
+    try {
+      const raw = localStorage.getItem('pos_custom_categories');
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  saveCustomCategory(categoryName) {
+    if (!categoryName || typeof categoryName !== 'string') return this.getCustomCategories();
+    const trimmed = categoryName.trim();
+    if (!trimmed) return this.getCustomCategories();
+
+    const existing = this.getCustomCategories();
+    const exists = existing.some(c => c.toLowerCase() === trimmed.toLowerCase());
+    if (!exists) {
+      existing.push(trimmed);
+      localStorage.setItem('pos_custom_categories', JSON.stringify(existing));
+    }
+    return existing;
+  }
+
+  getAllCategories(productsList = []) {
+    const productCategories = productsList.map(p => p.category).filter(Boolean);
+    const customCategories = this.getCustomCategories();
+    const defaults = ['เครื่องดื่ม', 'กาแฟ', 'เบเกอรี่'];
+    
+    const combined = [...defaults, ...productCategories, ...customCategories];
+    const unique = [];
+    combined.forEach(cat => {
+      const clean = (cat || '').trim();
+      if (clean && !unique.some(u => u.toLowerCase() === clean.toLowerCase())) {
+        unique.push(clean);
+      }
+    });
+    return unique;
+  }
+
   // --- PRODUCTS CRUD ---
   async getProducts() {
     if (this.isSupabaseConnected && this.supabase) {
